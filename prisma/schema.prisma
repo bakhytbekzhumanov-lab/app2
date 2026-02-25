@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Block {
+  HEALTH
+  WORK
+  DEVELOPMENT
+  RELATIONSHIPS
+  FINANCE
+  SPIRITUALITY
+  BRIGHTNESS
+  HOME
+}
+
+enum Difficulty {
+  EASY
+  NORMAL
+  HARD
+  VERY_HARD
+  LEGENDARY
+}
+
+enum TaskOwner {
+  MINE
+  DELEGATED
+  STUCK
+}
+
+enum KanbanStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+enum HabitFrequency {
+  DAILY
+  WEEKDAYS
+  THREE_PER_WEEK
+  CUSTOM
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  image          String?
+  passwordHash   String?
+  nickname       String?
+  avatarStage    Int       @default(1)
+  totalXp        Int       @default(0)
+  totalCoins     Int       @default(0)
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+  locale         String    @default("ru")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  actions       Action[]
+  logEntries    LogEntry[]
+  habits        Habit[]
+  habitLogs     HabitLog[]
+  kanbanTasks   KanbanTask[]
+  achievements  UserAchievement[]
+  rewards       Reward[]
+  balanceScores BalanceScore[]
+  dailyCheckins DailyCheckin[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Action {
+  id         String     @id @default(cuid())
+  name       String
+  block      Block
+  xp         Int
+  difficulty Difficulty @default(EASY)
+  isActive   Boolean    @default(true)
+  userId     String
+  createdAt  DateTime   @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logEntries LogEntry[]
+}
+
+model LogEntry {
+  id        String   @id @default(cuid())
+  actionId  String
+  userId    String
+  date      DateTime @default(now())
+  xpAwarded Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  action Action @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+model KanbanTask {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      KanbanStatus @default(TODO)
+  owner       TaskOwner    @default(MINE)
+  importance  Int          @default(5)
+  discomfort  Int          @default(5)
+  urgency     Int          @default(5)
+  block       Block?
+  delegatedTo String?
+  dueDate     DateTime?
+  completedAt DateTime?
+  position    Int          @default(0)
+  userId      String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+model Habit {
+  id            String         @id @default(cuid())
+  name          String
+  block         Block
+  frequency     HabitFrequency @default(DAILY)
+  customDays    Int[]
+  targetPerWeek Int            @default(7)
+  level         Int            @default(1)
+  currentStreak Int            @default(0)
+  longestStreak Int            @default(0)
+  xpPerLog      Int            @default(5)
+  isActive      Boolean        @default(true)
+  userId        String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs HabitLog[]
+
+  @@index([userId, isActive])
+}
+
+model HabitLog {
+  id        String   @id @default(cuid())
+  habitId   String
+  userId    String
+  date      DateTime
+  completed Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([userId, date])
+}
+
+model BalanceScore {
+  id     String   @id @default(cuid())
+  userId String
+  block  Block
+  score  Int
+  date   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+model DailyCheckin {
+  id             String   @id @default(cuid())
+  userId         String
+  date           DateTime
+  mainTaskDone   Boolean  @default(false)
+  totalTasks     Int      @default(0)
+  completedTasks Int      @default(0)
+  xpEarned       Int      @default(0)
+  energyLevel    Int?
+  moodLevel      Int?
+  note           String?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model Achievement {
+  id          String @id @default(cuid())
+  code        String @unique
+  name        String
+  description String
+  icon        String
+  condition   String
+  xpReward    Int    @default(0)
+  coinReward  Int    @default(0)
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+}
+
+model Reward {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  coinCost    Int
+  icon        String    @default("🎁")
+  isRedeemed  Boolean   @default(false)
+  redeemedAt  DateTime?
+  userId      String
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Cap {
+  id    String @id @default(cuid())
+  block Block  @unique
+  value Int
+}

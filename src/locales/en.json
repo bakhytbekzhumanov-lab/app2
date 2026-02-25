@@ -1,0 +1,149 @@
+{
+  "nav": {
+    "home": "Home",
+    "today": "Today",
+    "kanban": "Kanban",
+    "actions": "Actions",
+    "weekly": "Weekly",
+    "habits": "Habits",
+    "profile": "Profile",
+    "rewards": "Rewards"
+  },
+  "blocks": {
+    "HEALTH": "Health",
+    "WORK": "Work",
+    "DEVELOPMENT": "Development",
+    "RELATIONSHIPS": "Relationships",
+    "FINANCE": "Finance",
+    "SPIRITUALITY": "Spirituality",
+    "BRIGHTNESS": "Brightness",
+    "HOME": "Home"
+  },
+  "difficulty": {
+    "EASY": "Easy",
+    "NORMAL": "Normal",
+    "HARD": "Hard",
+    "VERY_HARD": "Very Hard",
+    "LEGENDARY": "Legendary"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search...",
+    "loading": "Loading...",
+    "noData": "No data yet",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "add": "Add",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "xp": "XP",
+    "coins": "Coins",
+    "level": "Level",
+    "streak": "Streak"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "name": "Name",
+    "orContinueWith": "or continue with",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signInWithGoogle": "Sign in with Google"
+  },
+  "dashboard": {
+    "greeting": "Hello",
+    "todayXP": "XP Today",
+    "actionsToday": "Actions Today",
+    "habitsToday": "Habits Today",
+    "mainTaskHeatmap": "Main Task of the Day",
+    "allTasksHeatmap": "All Tasks",
+    "recommendations": "Recommendations",
+    "weakBlock": "{block} block is at {percent}% — try:"
+  },
+  "today": {
+    "title": "Today",
+    "logAction": "Log Action",
+    "dailyCheckin": "Daily Check-in",
+    "mainTaskQuestion": "Did you complete your main task today?",
+    "energy": "Energy",
+    "mood": "Mood",
+    "note": "Note",
+    "todayLog": "Today's Log"
+  },
+  "actions": {
+    "title": "Action Library",
+    "addAction": "Add Action",
+    "importCSV": "Import CSV",
+    "name": "Name",
+    "block": "Block",
+    "difficulty": "Difficulty",
+    "active": "Active"
+  },
+  "kanban": {
+    "title": "Kanban Board",
+    "newTask": "New Task",
+    "backlog": "Backlog",
+    "todo": "To Do",
+    "inProgress": "In Progress",
+    "done": "Done",
+    "importance": "Importance",
+    "discomfort": "Discomfort",
+    "urgency": "Urgency",
+    "delegatedTo": "Delegated to",
+    "dueDate": "Due Date",
+    "matrixView": "Matrix",
+    "boardView": "Board"
+  },
+  "habits": {
+    "title": "Habits",
+    "addHabit": "Add Habit",
+    "frequency": "Frequency",
+    "daily": "Daily",
+    "weekdays": "Weekdays",
+    "threePerWeek": "3× per week",
+    "custom": "Custom",
+    "streakDays": "day streak",
+    "level": "Level",
+    "suggested": "Suggested Habits"
+  },
+  "weekly": {
+    "title": "Weekly Analytics",
+    "balanceWheel": "Balance Wheel",
+    "xpTrend": "XP Trend",
+    "blockDetails": "Block Details",
+    "weeklyReview": "Weekly Review",
+    "whatWentWell": "What went well?",
+    "whatToImprove": "What to improve?",
+    "focusNextWeek": "Focus for next week?"
+  },
+  "profile": {
+    "title": "Profile",
+    "nickname": "Nickname",
+    "stats": "Stats",
+    "achievements": "Achievements",
+    "settings": "Settings",
+    "language": "Language",
+    "exportData": "Export Data",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account"
+  },
+  "rewards": {
+    "title": "Reward Shop",
+    "createReward": "Create Reward",
+    "coinBalance": "Coin Balance",
+    "redeem": "Redeem",
+    "redeemed": "Redeemed",
+    "cost": "Cost",
+    "notEnoughCoins": "Not enough coins",
+    "history": "History"
+  }
+}

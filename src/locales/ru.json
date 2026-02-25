@@ -1,0 +1,149 @@
+{
+  "nav": {
+    "home": "Главная",
+    "today": "Сегодня",
+    "kanban": "Канбан",
+    "actions": "Действия",
+    "weekly": "Неделя",
+    "habits": "Привычки",
+    "profile": "Профиль",
+    "rewards": "Награды"
+  },
+  "blocks": {
+    "HEALTH": "Здоровье",
+    "WORK": "Работа",
+    "DEVELOPMENT": "Развитие",
+    "RELATIONSHIPS": "Отношения",
+    "FINANCE": "Финансы",
+    "SPIRITUALITY": "Духовность",
+    "BRIGHTNESS": "Яркость",
+    "HOME": "Дом"
+  },
+  "difficulty": {
+    "EASY": "Легко",
+    "NORMAL": "Нормально",
+    "HARD": "Сложно",
+    "VERY_HARD": "Очень сложно",
+    "LEGENDARY": "Легендарно"
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "create": "Создать",
+    "search": "Поиск...",
+    "loading": "Загрузка...",
+    "noData": "Данных пока нет",
+    "confirm": "Подтвердить",
+    "yes": "Да",
+    "no": "Нет",
+    "add": "Добавить",
+    "close": "Закрыть",
+    "back": "Назад",
+    "next": "Далее",
+    "xp": "XP",
+    "coins": "Монеты",
+    "level": "Уровень",
+    "streak": "Серия"
+  },
+  "auth": {
+    "signIn": "Войти",
+    "signUp": "Регистрация",
+    "email": "Email",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "name": "Имя",
+    "orContinueWith": "или продолжить с",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?",
+    "signInWithGoogle": "Войти через Google"
+  },
+  "dashboard": {
+    "greeting": "Привет",
+    "todayXP": "XP сегодня",
+    "actionsToday": "Действий сегодня",
+    "habitsToday": "Привычек сегодня",
+    "mainTaskHeatmap": "Главная задача дня",
+    "allTasksHeatmap": "Все задачи",
+    "recommendations": "Рекомендации",
+    "weakBlock": "Блок {block} на {percent}% — попробуйте:"
+  },
+  "today": {
+    "title": "Сегодня",
+    "logAction": "Записать действие",
+    "dailyCheckin": "Дневной чек-ин",
+    "mainTaskQuestion": "Вы выполнили главную задачу дня?",
+    "energy": "Энергия",
+    "mood": "Настроение",
+    "note": "Заметка",
+    "todayLog": "Журнал дня"
+  },
+  "actions": {
+    "title": "Библиотека действий",
+    "addAction": "Добавить действие",
+    "importCSV": "Импорт CSV",
+    "name": "Название",
+    "block": "Блок",
+    "difficulty": "Сложность",
+    "active": "Активно"
+  },
+  "kanban": {
+    "title": "Канбан-доска",
+    "newTask": "Новая задача",
+    "backlog": "Бэклог",
+    "todo": "К выполнению",
+    "inProgress": "В работе",
+    "done": "Готово",
+    "importance": "Важность",
+    "discomfort": "Дискомфорт",
+    "urgency": "Срочность",
+    "delegatedTo": "Делегировано",
+    "dueDate": "Дедлайн",
+    "matrixView": "Матрица",
+    "boardView": "Доска"
+  },
+  "habits": {
+    "title": "Привычки",
+    "addHabit": "Добавить привычку",
+    "frequency": "Частота",
+    "daily": "Ежедневно",
+    "weekdays": "Будни",
+    "threePerWeek": "3 раза в неделю",
+    "custom": "Настраиваемая",
+    "streakDays": "дней подряд",
+    "level": "Уровень",
+    "suggested": "Рекомендуемые привычки"
+  },
+  "weekly": {
+    "title": "Недельная аналитика",
+    "balanceWheel": "Колесо баланса",
+    "xpTrend": "Тренд XP",
+    "blockDetails": "Блоки в деталях",
+    "weeklyReview": "Обзор недели",
+    "whatWentWell": "Что прошло хорошо?",
+    "whatToImprove": "Что улучшить?",
+    "focusNextWeek": "Фокус на следующую неделю?"
+  },
+  "profile": {
+    "title": "Профиль",
+    "nickname": "Никнейм",
+    "stats": "Статистика",
+    "achievements": "Достижения",
+    "settings": "Настройки",
+    "language": "Язык",
+    "exportData": "Экспорт данных",
+    "dangerZone": "Опасная зона",
+    "deleteAccount": "Удалить аккаунт"
+  },
+  "rewards": {
+    "title": "Магазин наград",
+    "createReward": "Создать награду",
+    "coinBalance": "Баланс монет",
+    "redeem": "Получить",
+    "redeemed": "Получено",
+    "cost": "Стоимость",
+    "notEnoughCoins": "Недостаточно монет",
+    "history": "История"
+  }
+}

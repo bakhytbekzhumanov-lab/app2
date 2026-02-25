@@ -1,0 +1,149 @@
+{
+  "nav": {
+    "home": "Басты бет",
+    "today": "Бүгін",
+    "kanban": "Канбан",
+    "actions": "Әрекеттер",
+    "weekly": "Апта",
+    "habits": "Әдеттер",
+    "profile": "Профиль",
+    "rewards": "Сыйлықтар"
+  },
+  "blocks": {
+    "HEALTH": "Денсаулық",
+    "WORK": "Жұмыс",
+    "DEVELOPMENT": "Даму",
+    "RELATIONSHIPS": "Қарым-қатынас",
+    "FINANCE": "Қаржы",
+    "SPIRITUALITY": "Рухани",
+    "BRIGHTNESS": "Жарқындық",
+    "HOME": "Үй"
+  },
+  "difficulty": {
+    "EASY": "Оңай",
+    "NORMAL": "Қалыпты",
+    "HARD": "Қиын",
+    "VERY_HARD": "Өте қиын",
+    "LEGENDARY": "Аңыздық"
+  },
+  "common": {
+    "save": "Сақтау",
+    "cancel": "Бас тарту",
+    "delete": "Жою",
+    "edit": "Өңдеу",
+    "create": "Жасау",
+    "search": "Іздеу...",
+    "loading": "Жүктелуде...",
+    "noData": "Деректер жоқ",
+    "confirm": "Растау",
+    "yes": "Иә",
+    "no": "Жоқ",
+    "add": "Қосу",
+    "close": "Жабу",
+    "back": "Артқа",
+    "next": "Алға",
+    "xp": "XP",
+    "coins": "Монеталар",
+    "level": "Деңгей",
+    "streak": "Серия"
+  },
+  "auth": {
+    "signIn": "Кіру",
+    "signUp": "Тіркелу",
+    "email": "Email",
+    "password": "Құпия сөз",
+    "confirmPassword": "Құпия сөзді растаңыз",
+    "name": "Аты",
+    "orContinueWith": "немесе жалғастыру",
+    "noAccount": "Аккаунтыңыз жоқ па?",
+    "hasAccount": "Аккаунтыңыз бар ма?",
+    "signInWithGoogle": "Google арқылы кіру"
+  },
+  "dashboard": {
+    "greeting": "Сәлем",
+    "todayXP": "Бүгінгі XP",
+    "actionsToday": "Бүгінгі әрекеттер",
+    "habitsToday": "Бүгінгі әдеттер",
+    "mainTaskHeatmap": "Күннің басты тапсырмасы",
+    "allTasksHeatmap": "Барлық тапсырмалар",
+    "recommendations": "Ұсыныстар",
+    "weakBlock": "{block} блогы {percent}% — байқап көріңіз:"
+  },
+  "today": {
+    "title": "Бүгін",
+    "logAction": "Әрекетті жазу",
+    "dailyCheckin": "Күнделікті тексеру",
+    "mainTaskQuestion": "Бүгінгі басты тапсырманы орындадыңыз ба?",
+    "energy": "Энергия",
+    "mood": "Көңіл-күй",
+    "note": "Жазба",
+    "todayLog": "Бүгінгі журнал"
+  },
+  "actions": {
+    "title": "Әрекеттер кітапханасы",
+    "addAction": "Әрекет қосу",
+    "importCSV": "CSV импорт",
+    "name": "Атауы",
+    "block": "Блок",
+    "difficulty": "Қиындық",
+    "active": "Белсенді"
+  },
+  "kanban": {
+    "title": "Канбан тақтасы",
+    "newTask": "Жаңа тапсырма",
+    "backlog": "Бэклог",
+    "todo": "Орындалу керек",
+    "inProgress": "Орындалуда",
+    "done": "Дайын",
+    "importance": "Маңыздылық",
+    "discomfort": "Ыңғайсыздық",
+    "urgency": "Шұғылдық",
+    "delegatedTo": "Тапсырылды",
+    "dueDate": "Мерзім",
+    "matrixView": "Матрица",
+    "boardView": "Тақта"
+  },
+  "habits": {
+    "title": "Әдеттер",
+    "addHabit": "Әдет қосу",
+    "frequency": "Жиілік",
+    "daily": "Күнделікті",
+    "weekdays": "Жұмыс күндері",
+    "threePerWeek": "Аптасына 3 рет",
+    "custom": "Реттелетін",
+    "streakDays": "күн қатарынан",
+    "level": "Деңгей",
+    "suggested": "Ұсынылған әдеттер"
+  },
+  "weekly": {
+    "title": "Апталық талдау",
+    "balanceWheel": "Тепе-теңдік дөңгелегі",
+    "xpTrend": "XP тренді",
+    "blockDetails": "Блоктар егжей-тегжейлі",
+    "weeklyReview": "Апта шолуы",
+    "whatWentWell": "Не жақсы болды?",
+    "whatToImprove": "Нені жақсарту керек?",
+    "focusNextWeek": "Келесі аптаға фокус?"
+  },
+  "profile": {
+    "title": "Профиль",
+    "nickname": "Никнейм",
+    "stats": "Статистика",
+    "achievements": "Жетістіктер",
+    "settings": "Баптаулар",
+    "language": "Тіл",
+    "exportData": "Деректерді экспорттау",
+    "dangerZone": "Қауіпті аймақ",
+    "deleteAccount": "Аккаунтты жою"
+  },
+  "rewards": {
+    "title": "Сыйлық дүкені",
+    "createReward": "Сыйлық жасау",
+    "coinBalance": "Монета балансы",
+    "redeem": "Алу",
+    "redeemed": "Алынды",
+    "cost": "Құны",
+    "notEnoughCoins": "Монеталар жеткіліксіз",
+    "history": "Тарих"
+  }
+}
