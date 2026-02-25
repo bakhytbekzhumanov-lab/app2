@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "@/hooks/useLocale";
 import { toast } from "sonner";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, X, Gift, Coins, Check, Trash2 } from "lucide-react";
+import { Plus, X, Coins, Check, Trash2 } from "lucide-react";
 
 interface Reward {
   id: string;

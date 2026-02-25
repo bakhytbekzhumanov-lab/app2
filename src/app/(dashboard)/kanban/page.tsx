@@ -124,7 +124,7 @@ export default function KanbanPage() {
             return (
               <div key={col} className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-text-mid">{t.kanban[COLUMN_LABELS[col]]}</h3>
+                  <h3 className="text-sm font-medium text-text-mid">{(t.kanban as Record<string, string>)[COLUMN_LABELS[col]]}</h3>
                   <span className="text-xs text-text-dim font-mono">{colTasks.length}</span>
                 </div>
                 <div className="space-y-2 min-h-[200px]">
@@ -142,7 +142,7 @@ export default function KanbanPage() {
           })}
         </div>
       ) : (
-        <MatrixView tasks={tasks} t={t} onEdit={openEdit} />
+        <MatrixView tasks={tasks} onEdit={openEdit} />
       )}
 
       <Dialog.Root open={modalOpen} onOpenChange={setModalOpen}>
@@ -169,7 +169,7 @@ export default function KanbanPage() {
                   <label className="text-sm text-text-mid mb-1 block">Status</label>
                   <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as KanbanStatus })}
                     className="w-full bg-bg-elevated border border-border rounded-lg py-2 px-3 text-sm">
-                    {COLUMNS.map((s) => <option key={s} value={s}>{t.kanban[COLUMN_LABELS[s]]}</option>)}
+                    {COLUMNS.map((s) => <option key={s} value={s}>{(t.kanban as Record<string, string>)[COLUMN_LABELS[s]]}</option>)}
                   </select>
                 </div>
                 <div>
@@ -267,8 +267,8 @@ function TaskCard({ task, t, onEdit, onDelete, onMove, columns }: {
   );
 }
 
-function MatrixView({ tasks, t, onEdit }: { tasks: KanbanTask[]; t: Record<string, Record<string, string>>; onEdit: (t: KanbanTask) => void }) {
-  const activeTasks = tasks.filter((t) => t.status !== "DONE");
+function MatrixView({ tasks, onEdit }: { tasks: KanbanTask[]; onEdit: (t: KanbanTask) => void }) {
+  const activeTasks = tasks.filter((task) => task.status !== "DONE");
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="bg-bg-card border border-border rounded-xl p-4">

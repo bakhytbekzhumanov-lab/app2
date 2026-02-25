@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const habit = await prisma.habit.create({ data: { ...data, userId: session.user.id } });
     return NextResponse.json(habit, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) return NextResponse.json({ error: error.errors }, { status: 400 });
+    if (error instanceof z.ZodError) return NextResponse.json({ error: error.issues }, { status: 400 });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

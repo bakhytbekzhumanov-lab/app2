@@ -147,7 +147,7 @@ function drawRadar(canvas: HTMLCanvasElement, blocks: BlockData[], t: Record<str
       const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
       const x = cx + r * Math.cos(angle);
       const y = cy + r * Math.sin(angle);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
     }
     ctx.strokeStyle = "rgba(255,255,255,0.06)";
     ctx.lineWidth = 1;
@@ -171,7 +171,7 @@ function drawRadar(canvas: HTMLCanvasElement, blocks: BlockData[], t: Record<str
     const r = R * (b.percentage / 100);
     const x = cx + r * Math.cos(angle);
     const y = cy + r * Math.sin(angle);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
   });
   ctx.closePath();
   ctx.fillStyle = "rgba(74, 222, 128, 0.15)";
