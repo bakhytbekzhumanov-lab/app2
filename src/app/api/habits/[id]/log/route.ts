@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { getHabitLevel } from "@/lib/habitLevels";
 
 const logSchema = z.object({ date: z.string(), completed: z.boolean().optional() });
 
@@ -22,15 +23,31 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const existing = await prisma.habitLog.findUnique({ where: { habitId_date: { habitId: params.id, date: logDate } } });
 
     if (existing) {
-      if (!completed) { await prisma.habitLog.delete({ where: { id: existing.id } }); return NextResponse.json({ removed: true }); }
+      if (!completed) {
+        await prisma.$transaction([
+          prisma.habitLog.delete({ where: { id: existing.id } }),
+          prisma.user.update({ where: { id: session.user.id }, data: { totalXp: { decrement: habit.xpPerLog } } }),
+        ]);
+        return NextResponse.json({ removed: true });
+      }
       return NextResponse.json(existing);
     }
     if (!completed) return NextResponse.json({ removed: true });
 
     const result = await prisma.$transaction(async (tx) => {
       const log = await tx.habitLog.create({ data: { habitId: params.id, userId: session.user.id, date: logDate, completed: true } });
-      await tx.user.update({ where: { id: session.user.id }, data: { totalXp: { increment: habit.xpPerLog } } });
-      return { log, xpAwarded: habit.xpPerLog };
+
+      // Calculate level and XP multiplier
+      const totalLogs = await tx.habitLog.count({ where: { habitId: params.id, completed: true } });
+      const levelInfo = getHabitLevel(totalLogs);
+      const xpToAward = Math.round(habit.xpPerLog * levelInfo.xpMultiplier);
+
+      await tx.user.update({ where: { id: session.user.id }, data: { totalXp: { increment: xpToAward } } });
+
+      // Update habit level
+      await tx.habit.update({ where: { id: params.id }, data: { level: levelInfo.level } });
+
+      return { log, xpAwarded: xpToAward, newLevel: levelInfo.level, levelTitle: levelInfo.title };
     });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

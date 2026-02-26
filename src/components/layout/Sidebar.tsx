@@ -80,7 +80,7 @@ export default function Sidebar() {
       <div className="p-4 border-t border-border">
         {!collapsed && (
           <div className="text-xs text-text-dim">
-            Life RPG v0.1
+            Life RPG v0.2
           </div>
         )}
       </div>

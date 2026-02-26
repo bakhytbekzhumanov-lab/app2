@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 import { useLocale } from "@/hooks/useLocale";
 import { UserPlus, Mail, Lock, User } from "lucide-react";
 
@@ -47,18 +46,8 @@ export default function RegisterPage() {
         return;
       }
 
-      const signInRes = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (signInRes?.error) {
-        router.push("/signin");
-      } else {
-        router.push("/");
-        router.refresh();
-      }
+      // Redirect to email verification page
+      router.push("/verify");
     } catch {
       setError("Something went wrong");
       setLoading(false);

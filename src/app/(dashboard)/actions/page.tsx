@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocale } from "@/hooks/useLocale";
 import { BLOCK_COLORS } from "@/types";
 import type { Block, Difficulty } from "@prisma/client";
 import { toast } from "sonner";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Switch from "@radix-ui/react-switch";
-import { Plus, Pencil, Trash2, Search, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, X, Upload } from "lucide-react";
 
 interface ActionItem { id: string; name: string; block: Block; xp: number; difficulty: Difficulty; isActive: boolean; }
 const BLOCKS: Block[] = ["HEALTH", "WORK", "DEVELOPMENT", "RELATIONSHIPS", "FINANCE", "SPIRITUALITY", "BRIGHTNESS", "HOME"];
@@ -21,6 +21,7 @@ export default function ActionsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAction, setEditingAction] = useState<ActionItem | null>(null);
   const [form, setForm] = useState({ name: "", block: "HEALTH" as Block, xp: 10, difficulty: "EASY" as Difficulty });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchActions = async () => { const res = await fetch("/api/actions"); const data = await res.json(); setActions(Array.isArray(data) ? data : []); };
   useEffect(() => { fetchActions(); }, []);
@@ -38,13 +39,47 @@ export default function ActionsPage() {
   const handleDelete = async (id: string) => { if (!confirm("Delete?")) return; await fetch(`/api/actions/${id}`, { method: "DELETE" }); fetchActions(); };
   const toggleActive = async (a: ActionItem) => { await fetch(`/api/actions/${a.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive: !a.isActive }) }); fetchActions(); };
 
+  const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/actions/import", { method: "POST", body: formData });
+      const result = await res.json();
+
+      if (result.imported > 0) {
+        toast.success(`Импортировано ${result.imported} действий`);
+        fetchActions();
+      }
+      if (result.errors > 0) {
+        toast.error(`${result.errors} строк с ошибками`);
+      }
+      if (result.imported === 0 && result.errors === 0) {
+        toast.error("Файл пуст или неверный формат");
+      }
+    } catch {
+      toast.error("Ошибка импорта");
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const filtered = actions.filter((a) => filterBlock === "ALL" || a.block === filterBlock).filter((a) => a.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t.actions.title}</h1>
-        <button onClick={openCreate} className="flex items-center gap-2 bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent/90"><Plus className="w-4 h-4" />{t.actions.addAction}</button>
+        <div className="flex items-center gap-2">
+          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleCSVImport} />
+          <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 bg-bg-elevated border border-border text-text-mid px-4 py-2 rounded-lg text-sm font-medium hover:bg-bg-card-hover transition-colors">
+            <Upload className="w-4 h-4" />{t.actions.importCSV}
+          </button>
+          <button onClick={openCreate} className="flex items-center gap-2 bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent/90"><Plus className="w-4 h-4" />{t.actions.addAction}</button>
+        </div>
       </div>
 
       <div className="flex gap-3">
@@ -86,6 +121,14 @@ export default function ActionsPage() {
           </tbody>
         </table>
         {filtered.length === 0 && <div className="text-center py-12 text-text-dim text-sm">{t.common.noData}</div>}
+      </div>
+
+      <div className="bg-bg-card border border-border rounded-xl p-4">
+        <p className="text-xs text-text-dim">
+          💡 CSV формат: <code className="bg-bg-elevated px-1 py-0.5 rounded text-accent">name,block,xp,difficulty</code>
+          <br />Пример: <code className="bg-bg-elevated px-1 py-0.5 rounded">Утренняя зарядка,HEALTH,20,NORMAL</code>
+          <br />Блоки: HEALTH, WORK, DEVELOPMENT, RELATIONSHIPS, FINANCE, SPIRITUALITY, BRIGHTNESS, HOME
+        </p>
       </div>
 
       <Dialog.Root open={modalOpen} onOpenChange={setModalOpen}>

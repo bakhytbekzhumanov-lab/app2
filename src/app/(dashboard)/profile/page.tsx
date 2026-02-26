@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "@/hooks/useLocale";
 import { AVATAR_TITLES } from "@/lib/xp";
 import { toast } from "sonner";
-import { Flame, Zap, Target, Trophy, Settings, Medal, Globe } from "lucide-react";
+import { Flame, Zap, Target, Trophy, Settings, Medal, Globe, FileText } from "lucide-react";
+import Link from "next/link";
 
 interface ProfileData {
   id: string;
@@ -131,6 +132,13 @@ export default function ProfilePage() {
             <span className="text-sm text-text-dim">Email</span>
             <span className="text-sm">{profile.email}</span>
           </div>
+          <Link href="/changelog" className="flex items-center justify-between group">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-text-dim" />
+              <span className="text-sm group-hover:text-accent transition-colors">Что нового</span>
+            </div>
+            <span className="text-xs text-text-dim">v0.2.0</span>
+          </Link>
         </div>
       </div>
     </div>

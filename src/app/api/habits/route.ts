@@ -11,6 +11,8 @@ const createSchema = z.object({
   customDays: z.array(z.number()).optional(),
   targetPerWeek: z.number().int().positive().optional(),
   xpPerLog: z.number().int().positive().optional(),
+  negativeIfSkip: z.string().optional(),
+  positiveIfDone: z.string().optional(),
 });
 
 export async function GET() {
