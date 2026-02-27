@@ -39,15 +39,20 @@ export default function RegisterPage() {
         body: JSON.stringify({ name, email, password }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         setError(data.error || "Registration failed");
         setLoading(false);
         return;
       }
 
-      // Redirect to email verification page
-      router.push("/verify");
+      // Redirect based on whether email verification is required
+      if (data.requiresVerification) {
+        router.push("/verify");
+      } else {
+        router.push("/signin");
+      }
     } catch {
       setError("Something went wrong");
       setLoading(false);

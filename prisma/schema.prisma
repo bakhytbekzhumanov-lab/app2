@@ -62,6 +62,8 @@ model User {
   currentStreak  Int       @default(0)
   longestStreak  Int       @default(0)
   lastActiveDate DateTime?
+  phone          String?
+  timezone       String    @default("Asia/Almaty")
   locale         String    @default("ru")
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

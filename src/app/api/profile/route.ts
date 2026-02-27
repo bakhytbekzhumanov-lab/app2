@@ -14,7 +14,7 @@ export async function GET() {
       select: {
         id: true, name: true, email: true, nickname: true, avatarStage: true,
         totalXp: true, totalCoins: true, currentStreak: true, longestStreak: true,
-        locale: true, createdAt: true,
+        phone: true, timezone: true, locale: true, createdAt: true,
         achievements: { include: { achievement: true } },
         _count: { select: { logEntries: true, kanbanTasks: true, habits: true } },
       },
@@ -33,7 +33,7 @@ export async function PATCH(req: Request) {
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const allowed = ["nickname", "locale"];
+    const allowed = ["name", "nickname", "phone", "timezone", "locale"];
     const data: Record<string, string> = {};
     for (const key of allowed) { if (key in body) data[key] = body[key]; }
 

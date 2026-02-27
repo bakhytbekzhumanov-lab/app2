@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendVerificationEmail, isEmailConfigured } from "@/lib/email";
 
 const registerSchema = z.object({
   name: z.string().min(1),
@@ -23,30 +23,51 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 12);
     const nickname = email.split("@")[0];
 
-    const user = await prisma.user.create({
-      data: { name, email, passwordHash, nickname, avatarStage: 1 },
-    });
+    // If email service is not configured, auto-verify users
+    const emailEnabled = isEmailConfigured();
 
-    // Generate verification token
-    const token = crypto.randomUUID();
-    await prisma.verificationToken.create({
+    const user = await prisma.user.create({
       data: {
-        identifier: email,
-        token,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+        name, email, passwordHash, nickname, avatarStage: 1,
+        emailVerified: emailEnabled ? null : new Date(), // auto-verify if no email service
       },
     });
 
-    // Send verification email
-    try {
-      await sendVerificationEmail(email, token);
-    } catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
-      // Still return success — user can request resend later
+    if (emailEnabled) {
+      // Generate verification token and send email
+      const token = crypto.randomUUID();
+      await prisma.verificationToken.create({
+        data: {
+          identifier: email,
+          token,
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+        },
+      });
+
+      try {
+        await sendVerificationEmail(email, token);
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
+        // Auto-verify if email sending fails — don't lock user out
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { emailVerified: new Date() },
+        });
+        return NextResponse.json(
+          { id: user.id, email: user.email, requiresVerification: false },
+          { status: 201 }
+        );
+      }
+
+      return NextResponse.json(
+        { id: user.id, email: user.email, requiresVerification: true },
+        { status: 201 }
+      );
     }
 
+    // No email verification needed
     return NextResponse.json(
-      { id: user.id, email: user.email, requiresVerification: true },
+      { id: user.id, email: user.email, requiresVerification: false },
       { status: 201 }
     );
   } catch (error) {
