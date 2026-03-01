@@ -68,7 +68,10 @@ export default function HomePage() {
   const [yearCheckins, setYearCheckins] = useState<CheckinData[]>([]);
   const [energy, setEnergy] = useState<EnergyData | null>(null);
 
-  const today = new Date().toISOString().split("T")[0];
+  // Use local date parts to avoid UTC shift in non-UTC timezones
+  const toLocalDateStr = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const today = toLocalDateStr(new Date());
 
   useEffect(() => {
     Promise.all([
@@ -90,7 +93,7 @@ export default function HomePage() {
       // Kanban XP (completed today)
       const kanbanArr = Array.isArray(kanban) ? kanban : [];
       const kanbanXp = kanbanArr
-        .filter((t: KanbanTask) => t.status === "DONE" && t.completedAt && new Date(t.completedAt).toISOString().split("T")[0] === today)
+        .filter((t: KanbanTask) => t.status === "DONE" && t.completedAt && toLocalDateStr(new Date(t.completedAt)) === today)
         .reduce((s: number, t: KanbanTask) => s + calcKanbanXP(t.importance, t.discomfort, t.urgency), 0);
 
       // Habits XP (completed today)
@@ -98,7 +101,7 @@ export default function HomePage() {
       let habitsDone = 0;
       let habitXp = 0;
       habitsArr.forEach((h) => {
-        const todayLog = h.logs.find((l) => new Date(l.date).toISOString().split("T")[0] === today && l.completed);
+        const todayLog = h.logs.find((l) => toLocalDateStr(new Date(l.date)) === today && l.completed);
         if (todayLog) { habitsDone++; habitXp += h.xpPerLog; }
       });
 
@@ -399,13 +402,15 @@ function MiniRadar({ blocks }: { blocks: BlockData[] }) {
 }
 
 function HeatmapGrid({ checkins, type, days = 90 }: { checkins: CheckinData[]; type: "mainTask" | "allTasks"; days?: number }) {
+  const toLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const cells = [];
   const checkinMap = new Map<string, CheckinData>();
-  checkins.forEach((c) => { checkinMap.set(new Date(c.date).toISOString().split("T")[0], c); });
+  checkins.forEach((c) => { checkinMap.set(toLocal(new Date(c.date)), c); });
 
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
-    const key = d.toISOString().split("T")[0];
+    const key = toLocal(d);
     const dayNum = d.getDate();
     const checkin = checkinMap.get(key);
     let filled = false;
