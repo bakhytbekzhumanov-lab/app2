@@ -65,6 +65,8 @@ model User {
   phone          String?
   timezone       String    @default("Asia/Almaty")
   locale         String    @default("ru")
+  isGuest        Boolean   @default(false)
+  guestExpiresAt DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -79,6 +81,7 @@ model User {
   rewards       Reward[]
   balanceScores BalanceScore[]
   dailyCheckins DailyCheckin[]
+  energyLogs    EnergyLog[]
 }
 
 model Account {
@@ -149,8 +152,10 @@ model KanbanTask {
   block       Block?
   delegatedTo String?
   dueDate     DateTime?
-  completedAt DateTime?
-  position    Int          @default(0)
+  completedAt  DateTime?
+  isMainTask   Boolean      @default(false)
+  mainTaskDate DateTime?
+  position     Int          @default(0)
   userId      String
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -273,6 +278,40 @@ model Cap {
   id    String @id @default(cuid())
   block Block  @unique
   value Int
+}
+
+model EnergyLog {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime
+  sleepScore      Int      @default(0)
+  physicalScore   Int      @default(0)
+  mentalScore     Int      @default(0)
+  baseEnergy      Int      @default(100)
+  currentEnergy   Int      @default(100)
+  spentTotal      Int      @default(0)
+  recoveredTotal  Int      @default(0)
+  streakBonus     Int      @default(0)
+  isBurnout       Boolean  @default(false)
+  morningDone     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recoveries EnergyRecovery[]
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model EnergyRecovery {
+  id          String    @id @default(cuid())
+  energyLogId String
+  type        String
+  epRestored  Int
+  createdAt   DateTime  @default(now())
+
+  energyLog EnergyLog @relation(fields: [energyLogId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

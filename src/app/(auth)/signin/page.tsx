@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLocale } from "@/hooks/useLocale";
-import { LogIn, Mail, Lock, Chrome } from "lucide-react";
+import { LogIn, Mail, Lock } from "lucide-react";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -92,20 +92,6 @@ export default function SignInPage() {
               {loading ? "..." : t.auth.signIn}
             </button>
           </form>
-
-          <div className="my-6 flex items-center gap-3">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-text-dim">{t.auth.orContinueWith}</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          <button
-            onClick={() => signIn("google", { callbackUrl: "/" })}
-            className="w-full bg-bg-elevated border border-border rounded-lg py-2.5 text-sm hover:bg-bg-card-hover transition-colors flex items-center justify-center gap-2"
-          >
-            <Chrome className="w-4 h-4" />
-            {t.auth.signInWithGoogle}
-          </button>
 
           <p className="text-center text-sm text-text-dim mt-6">
             {t.auth.noAccount}{" "}

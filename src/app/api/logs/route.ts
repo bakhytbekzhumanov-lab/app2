@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthUserId } from "@/lib/getAuthUserId";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { getLevel } from "@/lib/xp";
 import { getStreakBonus } from "@/lib/coins";
+import { getUserTimezone, midnightInTimezone, endOfDayInTimezone, todayForTimezone } from "@/lib/timezone";
 
 const createSchema = z.object({
   actionId: z.string(),
@@ -14,26 +14,27 @@ const createSchema = z.object({
 
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = await getAuthUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const date = searchParams.get("date");
     const weekStart = searchParams.get("weekStart");
+    const tz = await getUserTimezone(userId);
 
     let dateFilter = {};
     if (date) {
-      const start = new Date(date); start.setHours(0, 0, 0, 0);
-      const end = new Date(date); end.setHours(23, 59, 59, 999);
+      const start = midnightInTimezone(date, tz);
+      const end = endOfDayInTimezone(date, tz);
       dateFilter = { date: { gte: start, lte: end } };
     } else if (weekStart) {
-      const start = new Date(weekStart); start.setHours(0, 0, 0, 0);
-      const end = new Date(start); end.setDate(end.getDate() + 7);
+      const start = midnightInTimezone(weekStart, tz);
+      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
       dateFilter = { date: { gte: start, lt: end } };
     }
 
     const logs = await prisma.logEntry.findMany({
-      where: { userId: session.user.id, ...dateFilter },
+      where: { userId, ...dateFilter },
       include: { action: true },
       orderBy: { createdAt: "desc" },
     });
@@ -45,35 +46,35 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = await getAuthUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const data = createSchema.parse(body);
 
-    const action = await prisma.action.findFirst({ where: { id: data.actionId, userId: session.user.id } });
+    const action = await prisma.action.findFirst({ where: { id: data.actionId, userId } });
     if (!action) return NextResponse.json({ error: "Action not found" }, { status: 404 });
 
     const logDate = data.date ? new Date(data.date) : new Date();
 
     const result = await prisma.$transaction(async (tx) => {
       const log = await tx.logEntry.create({
-        data: { actionId: data.actionId, userId: session.user.id, date: logDate, xpAwarded: action.xp, note: data.note },
+        data: { actionId: data.actionId, userId, date: logDate, xpAwarded: action.xp, note: data.note },
         include: { action: true },
       });
 
-      const user = await tx.user.findUnique({ where: { id: session.user.id } });
+      const user = await tx.user.findUnique({ where: { id: userId } });
       if (!user) throw new Error("User not found");
 
-      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const userTz = user.timezone || "Asia/Almaty";
+      const today = todayForTimezone(userTz);
       const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
-      lastActive?.setHours(0, 0, 0, 0);
 
       let newStreak = user.currentStreak;
       let coinBonus = 0;
 
       if (!lastActive || lastActive.getTime() < today.getTime()) {
-        const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
         if (lastActive && lastActive.getTime() === yesterday.getTime()) {
           newStreak = user.currentStreak + 1;
         } else if (!lastActive || lastActive.getTime() < yesterday.getTime()) {
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
       const newLevel = getLevel(newTotalXp);
 
       await tx.user.update({
-        where: { id: session.user.id },
+        where: { id: userId },
         data: {
           totalXp: newTotalXp, totalCoins: user.totalCoins + coinBonus,
           currentStreak: newStreak, longestStreak: Math.max(user.longestStreak, newStreak),

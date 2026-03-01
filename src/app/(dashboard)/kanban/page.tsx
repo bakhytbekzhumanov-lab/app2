@@ -6,8 +6,9 @@ import { BLOCK_COLORS, BLOCK_ICONS } from "@/types";
 import type { Block, KanbanStatus, TaskOwner } from "@prisma/client";
 import { toast } from "sonner";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, X, Trash2, GripVertical, LayoutGrid, Columns3 } from "lucide-react";
+import { Plus, X, Trash2, GripVertical, LayoutGrid, Columns3, Star } from "lucide-react";
 import { calcKanbanXP } from "@/lib/xp";
+import { getTaskPraise } from "@/lib/celebration";
 
 interface KanbanTask {
   id: string;
@@ -21,6 +22,9 @@ interface KanbanTask {
   block: Block | null;
   delegatedTo: string | null;
   dueDate: string | null;
+  completedAt: string | null;
+  isMainTask: boolean;
+  mainTaskDate: string | null;
   position: number;
   xpAwarded: number;
 }
@@ -34,14 +38,17 @@ const COLUMN_LABELS: Record<string, string> = {
 };
 
 export default function KanbanPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [view, setView] = useState<"board" | "matrix">("board");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<KanbanStatus | null>(null);
   const [form, setForm] = useState({
     title: "", description: "", status: "BACKLOG" as KanbanStatus, owner: "MINE" as TaskOwner,
     importance: 5, discomfort: 5, urgency: 5, block: null as Block | null, delegatedTo: "", dueDate: "",
+    isMainTask: false, mainTaskDate: "",
   });
 
   const fetchTasks = useCallback(async () => {
@@ -53,7 +60,7 @@ export default function KanbanPage() {
 
   const openCreate = (status: KanbanStatus = "BACKLOG") => {
     setEditingTask(null);
-    setForm({ title: "", description: "", status, owner: "MINE", importance: 5, discomfort: 5, urgency: 5, block: null, delegatedTo: "", dueDate: "" });
+    setForm({ title: "", description: "", status, owner: "MINE", importance: 5, discomfort: 5, urgency: 5, block: null, delegatedTo: "", dueDate: "", isMainTask: false, mainTaskDate: "" });
     setModalOpen(true);
   };
 
@@ -63,13 +70,20 @@ export default function KanbanPage() {
       title: task.title, description: task.description || "", status: task.status, owner: task.owner,
       importance: task.importance, discomfort: task.discomfort, urgency: task.urgency,
       block: task.block, delegatedTo: task.delegatedTo || "", dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
+      isMainTask: task.isMainTask, mainTaskDate: task.mainTaskDate ? task.mainTaskDate.split("T")[0] : "",
     });
     setModalOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.title.trim()) return;
-    const body = { ...form, block: form.block || undefined, delegatedTo: form.delegatedTo || null, dueDate: form.dueDate || null };
+    const body = {
+      ...form,
+      block: form.block || undefined,
+      delegatedTo: form.delegatedTo || null,
+      dueDate: form.dueDate || null,
+      mainTaskDate: form.isMainTask && form.mainTaskDate ? form.mainTaskDate : null,
+    };
     if (editingTask) {
       await fetch(`/api/kanban/${editingTask.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       toast.success("Updated");
@@ -85,7 +99,10 @@ export default function KanbanPage() {
     const res = await fetch(`/api/kanban/${taskId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) });
     if (res.ok) {
       const data = await res.json();
-      if (newStatus === "DONE" && data.xpAwarded > 0) toast.success(`+${data.xpAwarded} XP!`);
+      if (newStatus === "DONE" && data.xpAwarded > 0) {
+        toast.success(`+${data.xpAwarded} XP!`);
+        setTimeout(() => toast(getTaskPraise(locale), { duration: 3000 }), 400);
+      }
       fetchTasks();
     }
   };
@@ -94,6 +111,37 @@ export default function KanbanPage() {
     if (!confirm("Delete?")) return;
     await fetch(`/api/kanban/${id}`, { method: "DELETE" });
     fetchTasks();
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (taskId: string) => {
+    setDraggedTaskId(taskId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, col: KanbanStatus) => {
+    e.preventDefault();
+    setDragOverCol(col);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverCol(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, col: KanbanStatus) => {
+    e.preventDefault();
+    setDragOverCol(null);
+    if (draggedTaskId) {
+      const task = tasks.find((t) => t.id === draggedTaskId);
+      if (task && task.status !== col) {
+        moveTask(draggedTaskId, col);
+      }
+    }
+    setDraggedTaskId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTaskId(null);
+    setDragOverCol(null);
   };
 
   const xpPreview = calcKanbanXP(form.importance, form.discomfort, form.urgency);
@@ -120,16 +168,33 @@ export default function KanbanPage() {
       {view === "board" ? (
         <div className="grid grid-cols-4 gap-4">
           {COLUMNS.map((col) => {
-            const colTasks = tasks.filter((t) => t.status === col);
+            const colTasks = tasks.filter((tk) => tk.status === col);
             return (
-              <div key={col} className="space-y-3">
+              <div
+                key={col}
+                className={`space-y-3 rounded-xl p-2 transition-colors ${dragOverCol === col ? "bg-accent/5 ring-2 ring-accent/30" : ""}`}
+                onDragOver={(e) => handleDragOver(e, col)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, col)}
+              >
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium text-text-mid">{(t.kanban as Record<string, string>)[COLUMN_LABELS[col]]}</h3>
                   <span className="text-xs text-text-dim font-mono">{colTasks.length}</span>
                 </div>
                 <div className="space-y-2 min-h-[200px]">
                   {colTasks.map((task) => (
-                    <TaskCard key={task.id} task={task} t={t} onEdit={openEdit} onDelete={deleteTask} onMove={moveTask} columns={COLUMNS} />
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      t={t}
+                      onEdit={openEdit}
+                      onDelete={deleteTask}
+                      onMove={moveTask}
+                      columns={COLUMNS}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      isDragging={draggedTaskId === task.id}
+                    />
                   ))}
                   {col !== "DONE" && (
                     <button onClick={() => openCreate(col)} className="w-full border border-dashed border-border rounded-lg py-3 text-xs text-text-dim hover:border-accent/30 hover:text-text-mid transition-colors">
@@ -212,6 +277,22 @@ export default function KanbanPage() {
                     className="w-full bg-bg-elevated border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent/50" />
                 </div>
               </div>
+              {/* Main Task Assignment */}
+              <div className="bg-bg-elevated border border-border rounded-lg p-3 space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={form.isMainTask} onChange={(e) => setForm({ ...form, isMainTask: e.target.checked })}
+                    className="w-4 h-4 rounded accent-accent" />
+                  <Star className={`w-4 h-4 ${form.isMainTask ? "text-yellow-400" : "text-text-dim"}`} />
+                  <span className="text-sm">Main task of the day</span>
+                </label>
+                {form.isMainTask && (
+                  <div>
+                    <label className="text-xs text-text-dim mb-1 block">Date for main task</label>
+                    <input type="date" value={form.mainTaskDate} onChange={(e) => setForm({ ...form, mainTaskDate: e.target.value })}
+                      className="w-full bg-bg border border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accent/50" />
+                  </div>
+                )}
+              </div>
               {form.owner === "DELEGATED" && (
                 <div>
                   <label className="text-sm text-text-mid mb-1 block">{t.kanban.delegatedTo}</label>
@@ -231,18 +312,28 @@ export default function KanbanPage() {
   );
 }
 
-function TaskCard({ task, t, onEdit, onDelete, onMove, columns }: {
+function TaskCard({ task, t, onEdit, onDelete, onMove, columns, onDragStart, onDragEnd, isDragging }: {
   task: KanbanTask; t: Record<string, Record<string, string>>; onEdit: (t: KanbanTask) => void;
   onDelete: (id: string) => void; onMove: (id: string, status: KanbanStatus) => void; columns: KanbanStatus[];
+  onDragStart: (id: string) => void; onDragEnd: () => void; isDragging: boolean;
 }) {
   const currentIdx = columns.indexOf(task.status);
   const nextCol = currentIdx < columns.length - 1 ? columns[currentIdx + 1] : null;
   const xp = calcKanbanXP(task.importance, task.discomfort, task.urgency);
 
   return (
-    <div className="bg-bg-card border border-border rounded-lg p-3 group cursor-pointer hover:border-border-hover transition-colors" onClick={() => onEdit(task)}>
+    <div
+      draggable
+      onDragStart={() => onDragStart(task.id)}
+      onDragEnd={onDragEnd}
+      className={`bg-bg-card border border-border rounded-lg p-3 group cursor-grab active:cursor-grabbing hover:border-border-hover transition-all ${isDragging ? "opacity-40 scale-95" : ""}`}
+      onClick={() => onEdit(task)}
+    >
       <div className="flex items-start justify-between mb-2">
-        <span className="text-sm font-medium leading-tight">{task.title}</span>
+        <div className="flex items-center gap-1.5">
+          {task.isMainTask && <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 flex-shrink-0" />}
+          <span className="text-sm font-medium leading-tight">{task.title}</span>
+        </div>
         <GripVertical className="w-3.5 h-3.5 text-text-dim opacity-0 group-hover:opacity-100 flex-shrink-0" />
       </div>
       {task.block && (
@@ -274,7 +365,7 @@ function MatrixView({ tasks, onEdit }: { tasks: KanbanTask[]; onEdit: (t: Kanban
       <div className="bg-bg-card border border-border rounded-xl p-4">
         <h3 className="text-sm font-medium text-red-400 mb-3">Urgent + Important</h3>
         <div className="space-y-2">
-          {activeTasks.filter((t) => t.urgency >= 6 && t.importance >= 6).map((task) => (
+          {activeTasks.filter((tk) => tk.urgency >= 6 && tk.importance >= 6).map((task) => (
             <div key={task.id} className="text-sm px-3 py-2 bg-bg-elevated rounded-lg cursor-pointer hover:bg-bg-card-hover" onClick={() => onEdit(task)}>{task.title}</div>
           ))}
         </div>
@@ -282,7 +373,7 @@ function MatrixView({ tasks, onEdit }: { tasks: KanbanTask[]; onEdit: (t: Kanban
       <div className="bg-bg-card border border-border rounded-xl p-4">
         <h3 className="text-sm font-medium text-blue-400 mb-3">Important, Not Urgent</h3>
         <div className="space-y-2">
-          {activeTasks.filter((t) => t.urgency < 6 && t.importance >= 6).map((task) => (
+          {activeTasks.filter((tk) => tk.urgency < 6 && tk.importance >= 6).map((task) => (
             <div key={task.id} className="text-sm px-3 py-2 bg-bg-elevated rounded-lg cursor-pointer hover:bg-bg-card-hover" onClick={() => onEdit(task)}>{task.title}</div>
           ))}
         </div>
@@ -290,7 +381,7 @@ function MatrixView({ tasks, onEdit }: { tasks: KanbanTask[]; onEdit: (t: Kanban
       <div className="bg-bg-card border border-border rounded-xl p-4">
         <h3 className="text-sm font-medium text-orange-400 mb-3">Urgent, Not Important</h3>
         <div className="space-y-2">
-          {activeTasks.filter((t) => t.urgency >= 6 && t.importance < 6).map((task) => (
+          {activeTasks.filter((tk) => tk.urgency >= 6 && tk.importance < 6).map((task) => (
             <div key={task.id} className="text-sm px-3 py-2 bg-bg-elevated rounded-lg cursor-pointer hover:bg-bg-card-hover" onClick={() => onEdit(task)}>{task.title}</div>
           ))}
         </div>
@@ -298,7 +389,7 @@ function MatrixView({ tasks, onEdit }: { tasks: KanbanTask[]; onEdit: (t: Kanban
       <div className="bg-bg-card border border-border rounded-xl p-4">
         <h3 className="text-sm font-medium text-text-dim mb-3">Neither</h3>
         <div className="space-y-2">
-          {activeTasks.filter((t) => t.urgency < 6 && t.importance < 6).map((task) => (
+          {activeTasks.filter((tk) => tk.urgency < 6 && tk.importance < 6).map((task) => (
             <div key={task.id} className="text-sm px-3 py-2 bg-bg-elevated rounded-lg cursor-pointer hover:bg-bg-card-hover" onClick={() => onEdit(task)}>{task.title}</div>
           ))}
         </div>

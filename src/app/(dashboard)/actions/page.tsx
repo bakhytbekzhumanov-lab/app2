@@ -93,9 +93,9 @@ export default function ActionsPage() {
         </select>
       </div>
 
-      <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
+      <div className="bg-bg-card border border-border rounded-xl overflow-hidden max-h-[520px] overflow-y-auto">
         <table className="w-full">
-          <thead><tr className="border-b border-border text-left text-sm text-text-dim">
+          <thead className="sticky top-0 bg-bg-card z-10"><tr className="border-b border-border text-left text-sm text-text-dim">
             <th className="px-4 py-3 font-medium">{t.actions.name}</th><th className="px-4 py-3 font-medium">{t.actions.block}</th>
             <th className="px-4 py-3 font-medium">{t.common.xp}</th><th className="px-4 py-3 font-medium">{t.actions.difficulty}</th>
             <th className="px-4 py-3 font-medium">{t.actions.active}</th><th className="px-4 py-3 font-medium w-24"></th>

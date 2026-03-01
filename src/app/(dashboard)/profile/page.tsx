@@ -7,13 +7,48 @@ import { signOut } from "next-auth/react";
 import { LogOut, Download, FileText, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
-const TIMEZONES = [
-  "Asia/Almaty", "Asia/Aqtau", "Asia/Aqtobe", "Asia/Ashgabat", "Asia/Bishkek",
-  "Asia/Tashkent", "Asia/Yekaterinburg", "Asia/Novosibirsk", "Asia/Krasnoyarsk",
-  "Asia/Dubai", "Asia/Shanghai", "Asia/Tokyo", "Asia/Seoul", "Asia/Kolkata",
-  "Europe/Moscow", "Europe/London", "Europe/Berlin", "Europe/Istanbul",
-  "America/New_York", "America/Chicago", "America/Los_Angeles", "Pacific/Auckland",
-];
+function getAllTimezones(): { value: string; label: string }[] {
+  try {
+    const zones = Intl.supportedValuesOf("timeZone");
+    const now = new Date();
+    return zones
+      .map((tz) => {
+        const formatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          timeZoneName: "shortOffset",
+        });
+        const parts = formatter.formatToParts(now);
+        const offsetPart = parts.find((p) => p.type === "timeZoneName")?.value || "";
+        // offsetPart is like "GMT+5", "GMT-8", "GMT+5:30", "GMT"
+        const utcLabel = offsetPart === "GMT" ? "UTC+0" : offsetPart.replace("GMT", "UTC");
+        const city = tz.split("/").pop()?.replace(/_/g, " ") || tz;
+        return { value: tz, label: `(${utcLabel}) ${city}`, offset: offsetPart };
+      })
+      .sort((a, b) => {
+        // Sort by numeric UTC offset
+        const parseOffset = (o: string) => {
+          if (o === "GMT") return 0;
+          const m = o.match(/GMT([+-])(\d+)(?::(\d+))?/);
+          if (!m) return 0;
+          const sign = m[1] === "+" ? 1 : -1;
+          return sign * (parseInt(m[2]) * 60 + parseInt(m[3] || "0"));
+        };
+        return parseOffset(a.offset) - parseOffset(b.offset) || a.value.localeCompare(b.value);
+      });
+  } catch {
+    // Fallback for older browsers
+    const fallback = [
+      "Pacific/Midway", "Pacific/Honolulu", "America/Anchorage", "America/Los_Angeles",
+      "America/Denver", "America/Chicago", "America/New_York", "America/Sao_Paulo",
+      "Atlantic/Azores", "Europe/London", "Europe/Berlin", "Europe/Moscow",
+      "Asia/Dubai", "Asia/Kolkata", "Asia/Almaty", "Asia/Bangkok", "Asia/Shanghai",
+      "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland",
+    ];
+    return fallback.map((tz) => ({ value: tz, label: tz }));
+  }
+}
+
+const ALL_TIMEZONES = getAllTimezones();
 
 interface ProfileData {
   id: string;
@@ -99,7 +134,7 @@ export default function ProfilePage() {
   };
 
   const resetProgress = async () => {
-    if (!confirm(locale === "ru" ? "Сбросить ВСЕ: XP, уровень, серию, логи, привычки? Это необратимо!" : "Reset ALL: XP, level, streak, logs, habits? This is irreversible!")) return;
+    if (!confirm(locale === "ru" ? "Сбросить ВСЕ: XP, уровень, серию, логи, привычки, канбан, энергию? Это необратимо!" : "Reset ALL: XP, level, streak, logs, habits, kanban, energy? This is irreversible!")) return;
     const res = await fetch("/api/profile/reset-progress", { method: "DELETE" });
     if (res.ok) { toast.success(locale === "ru" ? "Прогресс сброшен" : "Progress reset"); fetchProfile(); }
   };
@@ -181,7 +216,7 @@ export default function ProfilePage() {
             <div className="relative">
               <select value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })}
                 className="w-full bg-bg-card border border-border rounded-lg py-2.5 px-3 text-sm focus:outline-none focus:border-accent/50 appearance-none pr-10">
-                {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+                {ALL_TIMEZONES.map((tz) => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
               </select>
               <ChevronDown className="w-4 h-4 text-text-dim absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -310,7 +345,7 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">{locale === "ru" ? "Сбросить прогресс" : "Reset all progress"}</p>
-            <p className="text-xs text-text-dim">{locale === "ru" ? "Сбросить XP, уровень, серию, логи" : "Reset XP, level, streak, logs, and habit progress"}</p>
+            <p className="text-xs text-text-dim">{locale === "ru" ? "Сбросить XP, уровень, серию, логи, привычки, канбан, энергию" : "Reset XP, level, streak, logs, habits, kanban, energy"}</p>
           </div>
           <button onClick={resetProgress}
             className="flex-shrink-0 px-3 py-1.5 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium hover:bg-red-500/10 transition-colors">

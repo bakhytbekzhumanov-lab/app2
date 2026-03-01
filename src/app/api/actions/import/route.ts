@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthUserId } from "@/lib/getAuthUserId";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -21,8 +20,8 @@ const rowSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id)
+    const userId = await getAuthUserId();
+    if (!userId)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const formData = await req.formData();
@@ -65,7 +64,7 @@ export async function POST(req: Request) {
         continue;
       }
 
-      actions.push({ ...parsed.data, userId: session.user.id });
+      actions.push({ ...parsed.data, userId });
     }
 
     if (actions.length > 0) {

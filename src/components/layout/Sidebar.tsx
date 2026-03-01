@@ -15,6 +15,8 @@ import {
   Gift,
   ChevronLeft,
   ChevronRight,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -29,7 +31,11 @@ const navItems = [
   { href: "/rewards", icon: Gift, key: "rewards" as const },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isGuest?: boolean;
+}
+
+export default function Sidebar({ isGuest = false }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useLocale();
   const [collapsed, setCollapsed] = useState(false);
@@ -77,12 +83,38 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-border">
-        {!collapsed && (
-          <div className="text-xs text-text-dim">
-            Life RPG v0.2
-          </div>
+      <div className="px-2 pb-2 space-y-1 border-t border-border pt-2">
+        {isGuest && (
+          <>
+            <Link
+              href="/signin"
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
+                "text-accent hover:bg-accent/10"
+              )}
+            >
+              <LogIn className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span>{t.auth?.signIn || "Sign In"}</span>}
+            </Link>
+            <Link
+              href="/register"
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
+                "text-green-400 hover:bg-green-400/10"
+              )}
+            >
+              <UserPlus className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span>{t.auth?.signUp || "Sign Up"}</span>}
+            </Link>
+          </>
         )}
+        <div className="px-3 py-2">
+          {!collapsed && (
+            <div className="text-xs text-text-dim">
+              Life RPG v0.3
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );

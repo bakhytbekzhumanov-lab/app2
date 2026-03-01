@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocale } from "@/hooks/useLocale";
 import { BLOCK_COLORS, BLOCK_ICONS } from "@/types";
 import type { Block } from "@prisma/client";
@@ -48,14 +48,25 @@ interface HabitData {
   logs: { date: string; completed: boolean }[];
 }
 
+interface EnergyData {
+  currentEnergy: number;
+  baseEnergy: number;
+  isBurnout: boolean;
+  sleepScore: number;
+  physicalScore: number;
+  mentalScore: number;
+  morningDone: boolean;
+}
+
 export default function HomePage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [blocks, setBlocks] = useState<BlockData[]>([]);
   const [checkins, setCheckins] = useState<CheckinData[]>([]);
   const [todayStats, setTodayStats] = useState({ xp: 0, actions: 0, habits: 0 });
   const [heatmapModalType, setHeatmapModalType] = useState<"mainTask" | "allTasks" | null>(null);
   const [yearCheckins, setYearCheckins] = useState<CheckinData[]>([]);
+  const [energy, setEnergy] = useState<EnergyData | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -97,6 +108,8 @@ export default function HomePage() {
         habits: habitsDone,
       });
     }).catch(() => {});
+    // Fetch energy separately
+    fetch("/api/energy").then((r) => r.json()).then((data) => setEnergy(data)).catch(() => {});
   }, [today]);
 
   const openHeatmapModal = async (type: "mainTask" | "allTasks") => {
@@ -131,35 +144,77 @@ export default function HomePage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      {/* Greeting + Radar */}
       <div className="bg-bg-card border border-border rounded-2xl p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">
-              {t.dashboard.greeting}, {profile.nickname}!
-            </h1>
-            <p className="text-text-dim text-sm mt-1">
-              {new Date().toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-            </p>
-          </div>
-          <div className="flex items-center gap-6">
-            {profile.currentStreak > 0 && (
-              <div className="flex items-center gap-2">
-                <Flame className="w-5 h-5 text-orange-400" />
-                <span className="text-lg font-mono font-bold text-orange-400">{profile.currentStreak}</span>
+        <div className="flex gap-6">
+          {/* Left: greeting, bars */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold">
+                    {t.dashboard.greeting}, {profile.nickname}!
+                  </h1>
+                  {profile.currentStreak > 0 && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/10">
+                      <Flame className="w-3.5 h-3.5 text-orange-400" />
+                      <span className="text-xs font-mono font-bold text-orange-400">{profile.currentStreak}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-text-dim text-sm mt-1">
+                  {new Date().toLocaleDateString(locale === "en" ? "en-US" : locale === "kz" ? "kk-KZ" : "ru-RU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                </p>
               </div>
-            )}
-            <div className="text-center">
-              <div className="relative w-16 h-16">
-                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                  <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-                  <circle cx="32" cy="32" r="28" fill="none" stroke="#4ade80" strokeWidth="4"
-                    strokeDasharray={`${lvl.progress * 175.9} 175.9`} strokeLinecap="round" />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-mono font-bold">{lvl.level}</span>
+            </div>
+
+            {/* XP Bar */}
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="text-text-dim tracking-widest uppercase">
+                    Level {lvl.level} · {lvl.currentXP} / {lvl.nextLevelXP} XP
+                  </span>
+                  <span className="font-mono text-accent">{Math.round(lvl.progress * 100)}%</span>
+                </div>
+                <div className="h-2.5 bg-bg-elevated rounded-full overflow-hidden">
+                  <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${Math.max(lvl.progress * 100, 2)}%` }} />
+                </div>
               </div>
-              <span className="text-xs text-text-dim">{t.common.level}</span>
+
+              {/* Energy Bar (blue) */}
+              {energy && (
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="text-text-dim tracking-widest uppercase flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-sky-400" />
+                      {locale === "ru" ? "Энергия" : locale === "kz" ? "Энергия" : "Energy"}
+                      {energy.isBurnout && (
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-purple-500/20 text-purple-400 font-medium ml-1">
+                          {locale === "ru" ? "ВЫГОРАНИЕ" : "BURNOUT"}
+                        </span>
+                      )}
+                    </span>
+                    <span className="font-mono text-sky-400">{energy.currentEnergy}/100</span>
+                  </div>
+                  <div className="h-2.5 bg-bg-elevated rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${Math.max(0, Math.min(energy.currentEnergy, 100))}%`, backgroundColor: "#38bdf8" }} />
+                  </div>
+                  {!energy.morningDone && (
+                    <Link href="/today" className="text-[10px] text-sky-400/70 mt-1 block hover:text-sky-400 transition-colors">
+                      ☀️ {locale === "ru" ? "Настройте утреннюю энергию →" : "Set up morning energy →"}
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Right: Mini Radar → links to /weekly */}
+          <Link href="/weekly" className="flex-shrink-0 flex items-center justify-center hover:opacity-80 transition-opacity" title={locale === "ru" ? "Баланс недели →" : "Weekly balance →"}>
+            <MiniRadar blocks={blocks} />
+          </Link>
         </div>
       </div>
 
@@ -172,10 +227,10 @@ export default function HomePage() {
           <div className="flex items-center gap-2 text-text-dim text-sm mb-2"><Target className="w-4 h-4 text-blue-400" />{t.dashboard.actionsToday}</div>
           <div className="text-2xl font-mono font-bold">{todayStats.actions}</div>
         </div>
-        <div className="bg-bg-card border border-border rounded-xl p-4">
+        <Link href="/habits" className="bg-bg-card border border-border rounded-xl p-4 hover:border-accent/30 transition-colors cursor-pointer">
           <div className="flex items-center gap-2 text-text-dim text-sm mb-2"><Repeat className="w-4 h-4 text-purple-400" />{t.dashboard.habitsToday}</div>
           <div className="text-2xl font-mono font-bold">{todayStats.habits}</div>
-        </div>
+        </Link>
       </div>
 
       <div>
@@ -251,6 +306,98 @@ export default function HomePage() {
   );
 }
 
+function MiniRadar({ blocks }: { blocks: BlockData[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || blocks.length === 0) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const size = 160;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    ctx.scale(dpr, dpr);
+
+    const cx = size / 2;
+    const cy = size / 2;
+    const R = size / 2 - 20;
+    const n = blocks.length;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Grid rings
+    for (let ring = 1; ring <= 5; ring++) {
+      const r = (R * ring) / 5;
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Axes
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + R * Math.cos(angle), cy + R * Math.sin(angle));
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.stroke();
+    }
+
+    // Data polygon
+    ctx.beginPath();
+    blocks.forEach((b, i) => {
+      const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+      const r = R * (b.percentage / 100);
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.fillStyle = "rgba(74, 222, 128, 0.15)";
+    ctx.fill();
+    ctx.strokeStyle = "#4ade80";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Points + emoji labels
+    blocks.forEach((b, i) => {
+      const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+      const r = R * (b.percentage / 100);
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = BLOCK_COLORS[b.block];
+      ctx.fill();
+
+      // Emoji at edge
+      const lx = cx + (R + 12) * Math.cos(angle);
+      const ly = cy + (R + 12) * Math.sin(angle);
+      ctx.font = "10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(BLOCK_ICONS[b.block], lx, ly);
+    });
+  }, [blocks]);
+
+  useEffect(() => { draw(); }, [draw]);
+
+  return <canvas ref={canvasRef} style={{ width: 160, height: 160 }} />;
+}
+
 function HeatmapGrid({ checkins, type, days = 90 }: { checkins: CheckinData[]; type: "mainTask" | "allTasks"; days?: number }) {
   const cells = [];
   const checkinMap = new Map<string, CheckinData>();
@@ -259,16 +406,38 @@ function HeatmapGrid({ checkins, type, days = 90 }: { checkins: CheckinData[]; t
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const key = d.toISOString().split("T")[0];
+    const dayNum = d.getDate();
     const checkin = checkinMap.get(key);
-    let color = "#1a1a25";
+    let filled = false;
+
     if (checkin) {
-      if (type === "mainTask") { color = checkin.mainTaskDone ? "#22c55e" : "#ef4444"; }
+      if (type === "mainTask") { filled = checkin.mainTaskDone; }
       else {
         const ratio = checkin.totalTasks > 0 ? checkin.completedTasks / checkin.totalTasks : 0;
-        color = ratio === 0 ? "#1a1a25" : ratio <= 0.25 ? "#166534" : ratio <= 0.5 ? "#22c55e80" : ratio <= 0.75 ? "#22c55e" : "#4ade80";
+        filled = ratio > 0;
       }
     }
-    cells.push(<div key={key} className={`w-3 h-3 rounded-sm ${i === 0 ? "ring-1 ring-accent" : ""}`} style={{ backgroundColor: color }} title={key} />);
+
+    const bgColor = filled ? "#22c55e" : "#1a1a25";
+
+    cells.push(
+      <div
+        key={key}
+        className={`w-6 h-6 rounded-sm relative flex items-center justify-center ${i === 0 ? "ring-1 ring-accent" : ""}`}
+        style={{ backgroundColor: bgColor }}
+        title={key}
+      >
+        <span className={`text-[8px] font-mono leading-none ${filled ? "text-black/70 font-semibold" : "text-text-dim/40"}`}>
+          {dayNum}
+        </span>
+        {/* Strikethrough for empty days */}
+        {!filled && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-4 h-px bg-text-dim/20" />
+          </div>
+        )}
+      </div>
+    );
   }
   return <div className="flex flex-wrap gap-1">{cells}</div>;
 }

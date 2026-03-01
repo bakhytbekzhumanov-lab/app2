@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthUserId } from "@/lib/getAuthUserId";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -19,11 +18,11 @@ const createSchema = z.object({
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = await getAuthUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const tasks = await prisma.kanbanTask.findMany({
-      where: { userId: session.user.id, status: { not: "ARCHIVED" } },
+      where: { userId, status: { not: "ARCHIVED" } },
       orderBy: [{ position: "asc" }, { createdAt: "desc" }],
     });
     return NextResponse.json(tasks);
@@ -34,13 +33,13 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = await getAuthUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const data = createSchema.parse(body);
     const task = await prisma.kanbanTask.create({
-      data: { ...data, dueDate: data.dueDate ? new Date(data.dueDate) : null, userId: session.user.id },
+      data: { ...data, dueDate: data.dueDate ? new Date(data.dueDate) : null, userId },
     });
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
